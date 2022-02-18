@@ -28,11 +28,10 @@ public class UserService {
      * @param userDto
      */
     public String generateJwtToken(String username) {
-    	String salt = "12345";//JwtUtils.generateSalt();
-    	/**
-    	 * @todo 将salt保存到数据库或者缓存中
-    	 * redisTemplate.opsForValue().set("token:"+username, salt, 3600, TimeUnit.SECONDS);
-    	 */   	
+    	String salt = "12345";
+    	//String salt =JwtUtils.generateSalt();
+		//将salt保存到数据库或者缓存中
+		//redisTemplate.opsForValue().set("token:"+username, salt, 3600, TimeUnit.SECONDS);
     	return JwtUtils.sign(username, salt, 3600); //生成jwt token，设置过期时间为1小时
     }
     
@@ -43,10 +42,8 @@ public class UserService {
      */
     public UserDto getJwtTokenInfo(String username) {
     	String salt = "12345";
-    	/**
-    	 * @todo 从数据库或者缓存中取出jwt token生成时用的salt
-    	 * salt = redisTemplate.opsForValue().get("token:"+username);
-    	 */   	
+    	//从数据库或者缓存中取出jwt token生成时用的salt
+    	// salt = redisTemplate.opsForValue().get("token:"+username);
     	UserDto user = getUserInfo(username);
     	user.setSalt(salt);
     	return user;
@@ -57,12 +54,9 @@ public class UserService {
      * @param userName 登录用户名
      * @param terminal 登录终端
      */
-    public void deleteLoginInfo(String username) {
-    	/**
-    	 * @todo 删除数据库或者缓存中保存的salt
-    	 * redisTemplate.delete("token:"+username);
-    	 */
-    	
+		public void deleteLoginInfo(String username) {
+    	//删除数据库或者缓存中保存的salt
+    	// redisTemplate.delete("token:"+username);
     }
     
     /**

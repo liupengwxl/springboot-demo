@@ -27,17 +27,18 @@ public class LoginController {
 
     /**
      * 用户名密码登录
-     * @param request
+     * @param
      * @return token
      */
     @PostMapping(value = "/login")
-    public ResponseEntity<Void> login(@RequestBody UserDto loginInfo, HttpServletRequest request, HttpServletResponse response){      
+    public ResponseEntity<Void> login(@RequestBody UserDto loginInfo, HttpServletResponse response){
         Subject subject = SecurityUtils.getSubject();
         try {
             UsernamePasswordToken token = new UsernamePasswordToken(loginInfo.getUsername(), loginInfo.getPassword());
-            subject.login(token);
+            subject.login(token);//登录
             
             UserDto user = (UserDto) subject.getPrincipal();
+            //通过用户名生成token
             String newToken = userService.generateJwtToken(user.getUsername());
             response.setHeader("x-auth-token", newToken);
             

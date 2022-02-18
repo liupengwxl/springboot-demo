@@ -5,3 +5,47 @@
 - 禁用session
 - 支持跨域访问
 
+需求相对简单，1）支持用户首次通过用户名和密码登录；2）登录后通过http header返回token；3）每次请求，客户端需通过header将token带回，用于权限校验；4）服务端负责token的定期刷新，刷新后新的token仍然放到header中返给客户端
+
+我们使用Shiro主要做3件事情，1）用户登录时做用户名密码校验；2）用户登录后收到请求时做JWT Token的校验；3）用户权限的校验 
+
+登录Logincontroller
+从前面的ShiroFilterChainDefinition配置可以看出，对于登录请求，Filter直接放过，进到controller里面。Controller会调用shiro做用户名和密码的校验，成功后返回token。
+
+登录的Realm
+从上面的controller实现我们看到，controller只负责封装下参数，然后扔给Shiro了，这时候Shiro收到后，会到所有的realm中找能处理UsernamePasswordToken的Realm（我们这里是DbShiroRealm），然后交给Realm处理。Realm的实现一般直接继承AuthorizingRealm即可，只需要实现两个方法，doGetAuthenticationInfo()会在用户验证时被调用，我们看下实现。
+
+JwtAuthFilter
+首先我们先从入口的Filter开始。从AuthenticatingFilter继承，重写isAccessAllow方法，方法中调用父类executeLogin()。父类的这个方法首先会createToken()，然后调用shiro的Subject.login()方法。是不是跟LoginController中的逻辑很像。
+这样非登录请求的认证处理逻辑也结束了，看起来是不是跟登录逻辑差不多。其实对于无状态服务来说，每次请求都相当于做了一次登录操作，我们用session的时候之所以不需要做，是因为容器代替我们把这件事干掉了。
+
+JWT token封装
+在上面的Filter中我们创建了一个Token提交给了shiro，我们看下这个Token，其实很简单，就是把jwt的token放在里面。 
+
+JWT Realm
+Token有了，filter中也调用了shiro的login()方法了，下一步自然是Shiro把token提交到Realm中，获取存储的认证信息来做比对。
+
+JWT Matcher
+跟controller登录不一样，shiro并没有实现JWT的Matcher，需要我们自己来实现
+这样非登录请求的认证处理逻辑也结束了，看起来是不是跟登录逻辑差不多。其实对于无状态服务来说，每次请求都相当于做了一次登录操作，我们用session的时候之所以不需要做，是因为容器代替我们把这件事干掉了。
+
+JWT Token刷新
+前面的Filter里面还有一个逻辑就是如果用户这次的token校验通过后，我们还会顺便看看token要不要刷新，如果需要刷新则将新的token放到header里面。
+这样做的目的是防止token丢了之后，别人可以拿着一直用。我们这里是固定时间刷新。安全性要求更高的系统可能每次请求都要求刷新，或者是每次POST，PUT等修改数据的请求后必须刷新
+
+
+角色配置
+认证讲完了，下面看下访问控制。对于角色检查的拦截，是通过继承一个AuthorizationFilter的Filter来实现的。Shiro提供了一个默认的实现RolesAuthorizationFilter，比如可以这么配置：
+
+表示要做文章的edit操作，需要满足两个条件，首先authc表示要通过用户认证，这个我们上面已经讲过了；其次要具备admin的角色。shiro是怎么做的呢？就是在请求进入这个filter后，shiro会调用所有配置的Realm获取用户的角色信息，然后和Filter中配置的角色做对比，对上了就可以通过了。
+所以我们所有的Realm还要另外一个方法doGetAuthorizationInfo，不得不吐槽一下，realm里面要实现的这两个方法的名字实在太像了。
+在JWT Realm里面，因为没有存储角色信息，所以直接返回空就可以了：
+
+自己实现RoleFilter
+在实际的项目中，对同一个url多个角色都有访问权限很常见，shiro默认的RoleFilter没有提供支持，比如上面的配置，如果我们配置成下面这样，那用户必须同时具备admin和manager权限才能访问，显然这个是不合理的
+
+所以自己实现一个role filter，只要任何一个角色符合条件就通过，只需要重写AuthorizationFilter中两个方法就可以了,AnyRolesAuthorizationFilter
+
+禁用session
+因为用了jwt的访问认证，所以要把默认session支持关掉。这里要
+做两件事情，一个是ShiroConfig里面的配置,另外一个是在对请求加上noSessionCreationFilter,具体原因上面的代码中已经有解释

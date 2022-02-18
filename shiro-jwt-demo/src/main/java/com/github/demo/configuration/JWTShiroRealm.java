@@ -5,6 +5,7 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,15 +25,20 @@ public class JWTShiroRealm extends AuthorizingRealm {
 
     public JWTShiroRealm(UserService userService){
         this.userService = userService;
+        //这里使用我们自定义的Matcher
         this.setCredentialsMatcher(new JWTCredentialsMatcher());
     }
 
+    /**
+     * 限定这个Realm只支持我们自定义的JWT Token
+     */
     @Override
     public boolean supports(AuthenticationToken token) {
         return token instanceof JWTToken;
     }
 
     /**
+     * 和logincontroller登录一样，也是获取用户的salt值，给到shiro，由shiro来调用matcher来做认证
      * 认证信息.(身份验证) : Authentication 是用来验证用户身份
      * 默认使用此方法进行用户名正确与否验证，错误抛出异常即可。
      */
@@ -49,7 +55,12 @@ public class JWTShiroRealm extends AuthorizingRealm {
 
         return authenticationInfo;
     }
-
+    /**
+     * @Description 在JWT Realm里面，因为没有存储角色信息，所以直接返回空就可以了
+     * @Param : [principals]
+     * @Author : liupeng
+     * @Date : 2022/2/18 16:36
+     */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         return new SimpleAuthorizationInfo();

@@ -2,6 +2,12 @@ package com.github.demo.configuration;
 
 import org.apache.shiro.authc.HostAuthenticationToken;
 
+/**
+ * @Description JWT token封装
+ * @Param :
+ * @Author : liupeng
+ * @Date : 2022/2/18 16:18
+ */
 public class JWTToken implements HostAuthenticationToken {
 	private static final long serialVersionUID = 9217639903967592166L;
 	

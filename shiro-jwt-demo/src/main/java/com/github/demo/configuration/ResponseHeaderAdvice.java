@@ -13,6 +13,13 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * @Description 对于controller返回@ResponseBody的请求，filter中添加的header信息会丢失
+ * 对于这个问题spring已经给出解释，并建议实现ResponseBodyAdvice类，并添加@ControllerAdvice。
+ * @Param :
+ * @Author : liupeng
+ * @Date : 2022/2/18 16:48
+ */
 @ControllerAdvice
 public class ResponseHeaderAdvice implements ResponseBodyAdvice<Object> {
     @Override
